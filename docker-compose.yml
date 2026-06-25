@@ -1,0 +1,111 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: triage_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: triage
+      POSTGRES_PASSWORD: triagepass
+      POSTGRES_DB: triage_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U triage -d triage_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - triage_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: triage_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - triage_net
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: triage_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://triage:triagepass@postgres:5432/triage_db?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    networks:
+      - triage_net
+
+  worker_followup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: triage_worker_followup
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://triage:triagepass@postgres:5432/triage_db?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    command: ["node", "src/workers/followup.worker.js"]
+    networks:
+      - triage_net
+
+  worker_assessment:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: triage_worker_assessment
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://triage:triagepass@postgres:5432/triage_db?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    command: ["node", "src/workers/assessment.worker.js"]
+    networks:
+      - triage_net
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  triage_net:
+    driver: bridge

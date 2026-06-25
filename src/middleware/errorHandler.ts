@@ -1,41 +1,40 @@
-import  {
-    NOT_FOUND,
-    FORBIDDEN,
-    VALIDATION_ERROR,
-    UNAUTHORIZED    
-} from "../constants.js"
+// src/middleware/error.middleware.js
+'use strict';
 
- import type {Request, Response, NextFunction} from "express"
+const { z } = require('zod');
+const ApiError = require('../utils/apiError');
+const { logger } = require('./logger.middleware');
 
-
-const errorHandler = (err : Error, req : Request, res: Response, next: NextFunction) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-
-  let title;
-
-  switch (statusCode) {
-    case VALIDATION_ERROR:
-      title = "Validation Error";
-      break;
-    case UNAUTHORIZED:
-      title = "Unauthorized";
-      break;
-    case FORBIDDEN:
-      title = "Forbidden";
-      break;
-    case NOT_FOUND:
-      title = "Not Found";
-      break;
-    default:
-      title = "Server Error";
-      break;
+// eslint-disable-next-line no-unused-vars
+const errorMiddleware = (err, req, res, next) => {
+  // Zod validation errors -> 400
+  if (err instanceof z.ZodError) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: err.flatten().fieldErrors,
+    });
   }
 
-  res.status(statusCode).json({
-    title,
-    message: err.message,
-    stackTrace: process.env.NODE_ENV === "production" ? null : err.stack,
+  // Operational errors we created ourselves
+  if (err instanceof ApiError) {
+    logger.warn({ err: err.message, statusCode: err.statusCode }, 'Operational error');
+    return res.status(err.statusCode).json({
+      success: false,
+      message: err.message,
+      ...(err.details ? { details: err.details } : {}),
+    });
+  }
+
+  // Unexpected / programmer errors
+  logger.error({ err }, 'Unhandled error');
+  return res.status(500).json({
+    success: false,
+    message:
+      process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : err.message || 'Internal server error',
   });
 };
 
-export default errorHandler;
+module.exports = errorMiddleware;
