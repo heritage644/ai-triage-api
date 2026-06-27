@@ -1,0 +1,87 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SessionStatus {
+  CREATED
+  AWAITING_FOLLOWUP
+  AWAITING_ANSWERS
+  AWAITING_ASSESSMENT
+  COMPLETED
+  FAILED
+}
+
+enum RiskLevel {
+  LOW
+  MODERATE
+  HIGH
+  EMERGENCY
+}
+
+model TriageSession {
+  id            String    @id @default(uuid()) @db.Uuid
+  status        SessionStatus @default(CREATED)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  symptom       SymptomSubmission?
+  followUp      FollowUpResponse?
+  assessment    AssessmentResult?
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("triage_sessions")
+}
+
+model SymptomSubmission {
+  id            String   @id @default(uuid()) @db.Uuid
+  sessionId     String   @unique @map("session_id") @db.Uuid
+  symptoms      String   @db.Text
+  age           Int?
+  gender        String?
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  session       TriageSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("symptom_submissions")
+}
+
+model FollowUpResponse {
+  id            String   @id @default(uuid()) @db.Uuid
+  sessionId     String   @unique @map("session_id") @db.Uuid
+  questions     Json     // { "questions": [...] }
+  answers       Json?    // { "answers": [...] }
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  session       TriageSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("follow_up_responses")
+}
+
+model AssessmentResult {
+  id                   String    @id @default(uuid()) @db.Uuid
+  sessionId            String    @unique @map("session_id") @db.Uuid
+  riskLevel            RiskLevel @map("risk_level")
+  possibleConditions   Json      @map("possible_conditions")
+  recommendations      Json
+  explanation          String    @db.Text
+  rawPayload           Json?     @map("raw_payload")
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  session              TriageSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([riskLevel])
+  @@map("assessment_results")
+}
