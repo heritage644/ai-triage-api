@@ -1,21 +1,20 @@
-// src/app.js
-'use strict';
+// src/app.ts
 
-const express = require('express');
-const helmet = require('helmet');
-const cors = require('cors');
-const rateLimit = require('express-rate-limit');
+import express, { Request, Response } from "express";
+import helmet from "helmet";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
 
-const env = require('./config/env');
-const { httpLogger } = require('./middleware/logger.middleware');
-const errorMiddleware = require('./middleware/error.middleware');
-const notFoundMiddleware = require('./middleware/notFound.middleware');
-const triageRoutes = require('./routes/triage.routes');
+import env from "./config/env";
+import { httpLogger } from "./middleware/logger.middleare";
+import errorMiddleware from "./middleware/errorHandler";
+import notFoundMiddleware from "./middleware/notfound.errr";
+import triageRoutes from "./routes/triage.routes";
 
 const app = express();
 
-
-app.set('trust proxy', 1);
+// Trust reverse proxy (e.g., Docker, Nginx)
+app.set("trust proxy", 1);
 
 // Security headers
 app.use(helmet());
@@ -23,16 +22,19 @@ app.use(helmet());
 // CORS
 app.use(
   cors({
-    origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN.split(','),
+    origin:
+      env.CORS_ORIGIN === "*"
+        ? true
+        : env.CORS_ORIGIN.split(","),
     credentials: true,
   })
 );
 
-//  Body parsers
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+// Body parsers
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
-// Request logger
+// HTTP request logger
 app.use(httpLogger);
 
 // Rate limiting
@@ -43,13 +45,14 @@ const limiter = rateLimit({
   legacyHeaders: false,
   message: {
     success: false,
-    message: 'Too many requests, please try again later.',
+    message: "Too many requests, please try again later.",
   },
 });
+
 app.use(limiter);
 
 interface HealthData {
-  status: 'ok';
+  status: "ok";
   timestamp: string;
 }
 
@@ -58,22 +61,30 @@ interface HealthResponse {
   data: HealthData;
 }
 
-// Health check
-app.get('/health', (req: import('express').Request, res: import('express').Response<HealthResponse>) => {
-  res.json({
-    success: true,
-    data: {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-    },
-  });
-});
+// Health check endpoint
+app.get(
+  "/health",
+  (
+    req: Request,
+    res: Response<HealthResponse>
+  ): void => {
+    res.json({
+      success: true,
+      data: {
+        status: "ok",
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+);
 
 // API routes
 app.use(`${env.API_PREFIX}/triage`, triageRoutes);
 
-// 404 + error handlers (MUST be last)
+// 404 handler
 app.use(notFoundMiddleware);
+
+// Global error handler
 app.use(errorMiddleware);
 
-module.exports = app;
+export default app;

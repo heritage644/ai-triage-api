@@ -1,7 +1,13 @@
 // src/ai/prompts/followup.prompt.js
 'use strict';
-
-const buildFollowupPrompt = ({ symptoms, age, gender }) => {
+interface GPTParams {
+  symptoms: string;
+  age: number | null;
+  gender: string | null;
+  schemaName?: string;
+   // The '?' means it's optional since you have a default value
+}
+const buildFollowupPrompt = ({ symptoms, age, gender }:GPTParams) => {
   const system = `You are an AI triage assistant used for EARLY health risk assessment.
 You are NOT a doctor. You do not diagnose. Your job is to gather more clinical
 context so a downstream risk model can triage the patient.

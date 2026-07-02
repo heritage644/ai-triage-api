@@ -15,18 +15,18 @@ const followupQueue = new Queue('followup-queue', {
   },
 });
 
-followupQueue.on('failed', (job, err) => {
+followupQueue.on('failed', (job :any, err :any) => {
   logger.error(
     { jobId: job.id, sessionId: job.data?.sessionId, err: err.message },
     'Followup job failed'
   );
 });
 
-followupQueue.on('completed', (job) => {
+followupQueue.on('completed', (job :any) => {
   logger.info({ jobId: job.id, sessionId: job.data?.sessionId }, 'Followup job completed');
 });
 
-const addFollowupJob = async (sessionId) => {
+const addFollowupJob = async (sessionId :string) => {
   return followupQueue.add(
     'generate-followup',
     { sessionId },

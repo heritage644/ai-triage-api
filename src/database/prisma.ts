@@ -18,8 +18,8 @@ const globalForPrisma = globalThis;
 
 const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 
-prisma.$on('warn', (e) => logger.warn({ prisma: e }, 'Prisma warning'));
-prisma.$on('error', (e) => logger.error({ prisma: e }, 'Prisma error'));
+prisma.$on('warn', (e :any) => logger.warn({ prisma: e }, 'Prisma warning'));
+prisma.$on('error', (e :any) => logger.error({ prisma: e }, 'Prisma error'));
 
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;

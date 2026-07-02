@@ -1,12 +1,12 @@
 // src/middleware/error.middleware.js
 'use strict';
-
+import type{ Request, Response, NextFunction } from 'express';
 const { z } = require('zod');
 const ApiError = require('../utils/apiError');
 const { logger } = require('./logger.middleware');
 
 // eslint-disable-next-line no-unused-vars
-const errorMiddleware = (err, req, res, next) => {
+const errorMiddleware = (err :any, req :Request, res :Response, next :NextFunction) => {
   // Zod validation errors -> 400
   if (err instanceof z.ZodError) {
     return res.status(400).json({
@@ -37,4 +37,4 @@ const errorMiddleware = (err, req, res, next) => {
   });
 };
 
-module.exports = errorMiddleware;
+export default errorMiddleware;

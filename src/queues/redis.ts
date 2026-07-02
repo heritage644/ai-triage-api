@@ -12,13 +12,13 @@ const createRedisConnection = () => {
     password: env.REDIS_PASSWORD || undefined,
     maxRetriesPerRequest: null, // required by Bull
     enableReadyCheck: false,
-    retryStrategy: (times) => {
+    retryStrategy: (times:any) => {
       const delay = Math.min(times * 200, 5000);
       return delay;
     },
   });
 
-  redis.on('error', (err) => logger.error({ err }, 'Redis connection error'));
+  redis.on('error', (err:any) => logger.error({ err }, 'Redis connection error'));
   redis.on('connect', () => logger.info('Redis connected'));
   return redis;
 };

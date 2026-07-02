@@ -1,11 +1,13 @@
 // src/controllers/triage.controller.js
+
 'use strict';
+import type { Request, Response } from "express";
 
 const triageService = require('../services/triage.service');
 const sessionService = require('../services/session.service');
 const asyncHandler = require('../utils/asyncHandler');
 
-const startTriage = asyncHandler(async (req, res) => {
+const startTriage = asyncHandler(async (req :Request, res:Response) => {
   const { symptoms, age, gender, metadata } = req.validated.body;
 
   const result = await triageService.startTriage({
@@ -18,7 +20,7 @@ const startTriage = asyncHandler(async (req, res) => {
   return res.status(201).json({ success: true, data: result });
 });
 
-const getSession = asyncHandler(async (req, res) => {
+const getSession = asyncHandler(async (req:Request, res:Response) => {
   const { sessionId } = req.validated.params;
 
   const status = await sessionService.getSessionStatus(sessionId);
@@ -39,7 +41,7 @@ const getSession = asyncHandler(async (req, res) => {
   });
 });
 
-const submitFollowup = asyncHandler(async (req, res) => {
+const submitFollowup = asyncHandler(async (req:Request, res:Response) => {
   const { sessionId } = req.validated.params;
   const { answers } = req.validated.body;
 
@@ -47,7 +49,7 @@ const submitFollowup = asyncHandler(async (req, res) => {
   return res.json({ success: true, data: result });
 });
 
-const getResult = asyncHandler(async (req, res) => {
+const getResult = asyncHandler(async (req:Request, res:Response) => {
   const { sessionId } = req.validated.params;
   const result = await triageService.getAssessmentResult(sessionId);
   return res.json({ success: true, data: result });

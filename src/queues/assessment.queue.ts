@@ -15,18 +15,18 @@ const assessmentQueue = new Queue('assessment-queue', {
   },
 });
 
-assessmentQueue.on('failed', (job, err) => {
+assessmentQueue.on('failed', (job :any, err :any) => {
   logger.error(
     { jobId: job.id, sessionId: job.data?.sessionId, err: err.message },
     'Assessment job failed'
   );
 });
 
-assessmentQueue.on('completed', (job) => {
+assessmentQueue.on('completed', (job :any) => {
   logger.info({ jobId: job.id, sessionId: job.data?.sessionId }, 'Assessment job completed');
 });
 
-const addAssessmentJob = async (sessionId) => {
+const addAssessmentJob = async (sessionId :string) => {
   return assessmentQueue.add(
     'generate-assessment',
     { sessionId },

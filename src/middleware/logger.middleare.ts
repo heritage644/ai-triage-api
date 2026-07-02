@@ -1,6 +1,6 @@
 // src/middleware/logger.middleware.js
 'use strict';
-
+import type{ Request, Response, NextFunction } from 'express';
 const pino = require('pino');
 const env = require('../config/env');
 
@@ -19,7 +19,7 @@ const logger = pino({
   },
 });
 
-const httpLogger = (req, res, next) => {
+const httpLogger = (req :Request, res :Response, next :NextFunction) => {
   const start = process.hrtime.bigint();
 
   res.on('finish', () => {
@@ -40,4 +40,4 @@ const httpLogger = (req, res, next) => {
   next();
 };
 
-module.exports = { logger, httpLogger };
+export { logger, httpLogger };

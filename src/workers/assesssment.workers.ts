@@ -11,7 +11,7 @@ const { logger } = require('../middleware/logger.middleware');
 
 const VALID_RISK_LEVELS = ['LOW', 'MODERATE', 'HIGH', 'EMERGENCY'];
 
-const normaliseAssessment = (parsed) => {
+const normaliseAssessment = (parsed :any) => {
   const riskLevel = String(parsed?.riskLevel || '').toUpperCase();
   if (!VALID_RISK_LEVELS.includes(riskLevel)) {
     throw new Error(`Invalid riskLevel received from GPT: ${parsed?.riskLevel}`);
@@ -28,7 +28,7 @@ const normaliseAssessment = (parsed) => {
   };
 };
 
-const processAssessmentJob = async (job) => {
+const processAssessmentJob = async (job :any) => {
   const { sessionId } = job.data;
   logger.info({ jobId: job.id, sessionId }, 'Processing assessment job');
 
@@ -52,8 +52,8 @@ const processAssessmentJob = async (job) => {
     : [];
 
   // Build merged Q&A for the prompt
-  const qa = answers.map((a, i) => ({
-    question: questions.find((q) => q.questionId === a.questionId)?.question || `Question ${i + 1}`,
+  const qa: { question: string; answer: string }[] = answers.map((a:any, i:any) => ({
+    question: questions.find((q :{ questionId: string; question: string }) => q.questionId === a.questionId)?.question || `Question ${i + 1}`,
     answer: a.answer,
   }));
 

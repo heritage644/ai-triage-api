@@ -24,4 +24,4 @@ router.post('/:sessionId/followup', validate(submitFollowupSchema), controller.s
 // GET /api/triage/:sessionId/result
 router.get('/:sessionId/result', validate(sessionIdParamSchema), controller.getResult);
 
-module.exports = router;
+export default router;

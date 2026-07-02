@@ -9,7 +9,7 @@ const { callGPTJson } = require('../ai/openai.service');
 const { buildFollowupPrompt } = require('../ai/prompts/followup.prompt');
 const { logger } = require('../middleware/logger.middleware');
 
-const processFollowupJob = async (job) => {
+const processFollowupJob = async (job :any) => {
   const { sessionId } = job.data;
   logger.info({ jobId: job.id, sessionId }, 'Processing followup job');
 

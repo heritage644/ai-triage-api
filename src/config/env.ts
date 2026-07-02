@@ -41,4 +41,4 @@ if (!parsed.success) {
 
 const env = Object.freeze(parsed.data);
 
-module.exports = env;
+export default env;

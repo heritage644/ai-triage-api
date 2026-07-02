@@ -1,7 +1,13 @@
 // src/ai/prompts/assessment.prompt.js
 'use strict';
-
-const buildAssessmentPrompt = ({ symptoms, answers, age, gender }) => {
+interface GPTParams {
+  symptoms: string;
+  answers: { question: string; answer: string }[];
+  age: number | null;
+  gender: string | null;
+  schemaName?: string; // The '?' means it's optional since you have a default value
+}
+const buildAssessmentPrompt = ({ symptoms, answers, age, gender }:GPTParams) => {
   const system = `You are an AI triage assistant providing an EARLY health risk
 assessment. You are NOT a doctor and you do not provide a medical diagnosis.
 Your output is used to route patients to the appropriate level of care.

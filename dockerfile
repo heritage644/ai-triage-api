@@ -14,7 +14,7 @@ RUN npm ci
 RUN npx prisma generate
 
 COPY . .
-
+RUN npm run build
 # ---------- Stage 2: runtime ----------
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -25,7 +25,7 @@ RUN apk add --no-cache openssl && \
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/src ./src
+COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./package.json
 
 USER appuser
@@ -33,4 +33,4 @@ USER appuser
 EXPOSE 4000
 
 # Apply migrations then start the API server
-CMD ["sh", "-c", "npx prisma migrate deploy && node src/server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]

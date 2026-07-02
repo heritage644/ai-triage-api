@@ -11,11 +11,16 @@ const client = new OpenAI({
   timeout: env.OPENAI_TIMEOUT_MS,
 });
 
+interface GPTParams {
+  system: string;
+  user: string;
+  schemaName?: string; // The '?' means it's optional since you have a default value
+}
 /**
  * Call the chat completions endpoint expecting a JSON response.
  * @param {{ system: string, user: string, schemaName?: string }} opts
  */
-const callGPTJson = async ({ system, user, schemaName = 'generic' }) => {
+const callGPTJson = async ({ system, user, schemaName = 'generic' }:GPTParams) => {
   const maxAttempts = 2;
   let lastError = null;
 
@@ -39,7 +44,7 @@ const callGPTJson = async ({ system, user, schemaName = 'generic' }) => {
 
       const parsed = JSON.parse(content);
       return { parsed, usage: completion.usage, rawContent: content };
-    } catch (err) {
+    } catch (err:any) {
       lastError = err;
       logger.warn({ schemaName, attempt, err: err.message }, 'GPT call attempt failed');
       if (attempt === maxAttempts) break;
