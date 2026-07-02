@@ -1,13 +1,21 @@
-// src/ai/prompts/followup.prompt.js
-'use strict';
-interface GPTParams {
+// src/ai/prompts/followup.prompt.ts
+
+export interface FollowupPromptParams {
   symptoms: string;
   age: number | null;
   gender: string | null;
-  schemaName?: string;
-   // The '?' means it's optional since you have a default value
 }
-const buildFollowupPrompt = ({ symptoms, age, gender }:GPTParams) => {
+
+export interface PromptMessages {
+  system: string;
+  user: string;
+}
+
+export function buildFollowupPrompt({
+  symptoms,
+  age,
+  gender,
+}: FollowupPromptParams): PromptMessages {
   const system = `You are an AI triage assistant used for EARLY health risk assessment.
 You are NOT a doctor. You do not diagnose. Your job is to gather more clinical
 context so a downstream risk model can triage the patient.
@@ -29,18 +37,24 @@ OUTPUT FORMAT — respond ONLY with valid JSON, no prose:
 
 Rules:
 - Each questionId MUST be unique within the response (q1, q2, ...).
-- category must be one of: "onset", "severity", "associated_symptoms", "history", "lifestyle".
+- category must be one of:
+  "onset",
+  "severity",
+  "associated_symptoms",
+  "history",
+  "lifestyle".
 - Maximum 5 questions.
 - Do not include disclaimers or markdown.`;
 
   const user = `Patient symptoms:
 ${symptoms}
-${age ? `Age: ${age}` : ''}
-${gender ? `Gender: ${gender}` : ''}
+${age !== null ? `Age: ${age}` : ""}
+${gender !== null ? `Gender: ${gender}` : ""}
 
 Generate the follow-up questions now.`;
 
-  return { system, user };
-};
-
-module.exports = { buildFollowupPrompt };
+  return {
+    system,
+    user,
+  };
+}

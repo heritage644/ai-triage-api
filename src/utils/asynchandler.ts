@@ -1,11 +1,17 @@
-// src/utils/asyncHandler.js
-'use strict';
+// src/utils/asyncHandler.ts
 
-/**
- * Wraps an async Express middleware/controller so that any thrown error
- * is automatically forwarded to the Express error middleware.
- */
-const asyncHandler = (fn) => (req, res, next) =>
-  Promise.resolve(fn(req, res, next)).catch(next);
+import { Request, Response, NextFunction, RequestHandler } from "express";
 
-module.exports = asyncHandler;
+type AsyncHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => Promise<unknown>;
+
+const asyncHandler = (fn: AsyncHandler): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+};
+
+export default asyncHandler;

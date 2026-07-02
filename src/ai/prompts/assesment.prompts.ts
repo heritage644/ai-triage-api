@@ -1,13 +1,21 @@
-// src/ai/prompts/assessment.prompt.js
-'use strict';
-interface GPTParams {
+// src/ai/prompts/assessment.prompt.ts
+
+export interface AssessmentPromptParams {
   symptoms: string;
-  answers: { question: string; answer: string }[];
+  answers: {
+    question: string;
+    answer: string;
+  }[];
   age: number | null;
   gender: string | null;
-  schemaName?: string; // The '?' means it's optional since you have a default value
 }
-const buildAssessmentPrompt = ({ symptoms, answers, age, gender }:GPTParams) => {
+
+export function buildAssessmentPrompt({
+  symptoms,
+  answers,
+  age,
+  gender,
+}: AssessmentPromptParams) {
   const system = `You are an AI triage assistant providing an EARLY health risk
 assessment. You are NOT a doctor and you do not provide a medical diagnosis.
 Your output is used to route patients to the appropriate level of care.
@@ -25,30 +33,34 @@ OUTPUT FORMAT — respond ONLY with valid JSON, no prose:
 
 Rules:
 - riskLevel:
-    - EMERGENCY: life-threatening signs — advise calling emergency services now.
-    - HIGH: urgent — should seek medical care within hours.
-    - MODERATE: should schedule a consultation soon (24-72h).
-    - LOW: likely non-urgent, self-monitor and see a doctor if it worsens.
-- possibleConditions: 1 to 5 short labels (not a diagnosis — just possibilities).
+    - EMERGENCY: life-threatening signs. Advise calling emergency services immediately.
+    - HIGH: Urgent. Seek medical care within hours.
+    - MODERATE: Schedule a consultation within 24-72 hours.
+    - LOW: Likely non-urgent. Self-monitor and consult a doctor if symptoms worsen.
+- possibleConditions: 1 to 5 short labels (not a diagnosis).
 - recommendations: 2 to 6 concrete next steps.
-- explanation: 40-120 words, empathetic, no medical jargon where avoidable.
+- explanation: 40 to 120 words, empathetic, avoid unnecessary medical jargon.
 - ALWAYS end the explanation by reminding the user to consult a qualified clinician.`;
 
   const answersBlock = answers
-    .map((a, i) => `Q${i + 1}: ${a.question}\nA${i + 1}: ${a.answer}`)
-    .join('\n');
+    .map(
+      (answer, index) =>
+        `Q${index + 1}: ${answer.question}\nA${index + 1}: ${answer.answer}`
+    )
+    .join("\n");
 
   const user = `Initial symptoms:
 ${symptoms}
-${age ? `Age: ${age}` : ''}
-${gender ? `Gender: ${gender}` : ''}
+${age !== null ? `Age: ${age}` : ""}
+${gender !== null ? `Gender: ${gender}` : ""}
 
 Follow-up Q&A:
 ${answersBlock}
 
 Produce the risk assessment now.`;
 
-  return { system, user };
-};
-
-module.exports = { buildAssessmentPrompt };
+  return {
+    system,
+    user,
+  };
+}

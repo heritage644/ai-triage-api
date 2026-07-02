@@ -1,25 +1,49 @@
-// src/workers/followup.worker.js
-'use strict';
+// src/workers/followup.worker.ts
 
-require('dotenv').config();
+import "dotenv/config";
 
-const prisma = require('../database/prisma');
-const { followupQueue } = require('../queues/followup.queue');
-const { callGPTJson } = require('../ai/openai.service');
-const { buildFollowupPrompt } = require('../ai/prompts/followup.prompt');
-const { logger } = require('../middleware/logger.middleware');
+import prisma from "../database/prisma";
+import { followupQueue } from "../queues/followup.queue";
+import { callGPTJson } from "../ai/openai.service";
+import { buildFollowupPrompt } from "../ai/prompts/follow.prompts";
+import { logger } from "../middleware/logger.middleare";
 
-const processFollowupJob = async (job :any) => {
+interface FollowupQuestion {
+  questionId: string;
+  question: string;
+}
+
+interface FollowupResponse {
+  questions: FollowupQuestion[];
+}
+
+const processFollowupJob = async (job: any): Promise<{
+  sessionId: string;
+  questionCount: number;
+}> => {
   const { sessionId } = job.data;
-  logger.info({ jobId: job.id, sessionId }, 'Processing followup job');
+
+  logger.info(
+    {
+      jobId: job.id,
+      sessionId,
+    },
+    "Processing followup job"
+  );
 
   const submission = await prisma.symptomSubmission.findUnique({
-    where: { sessionId },
-    include: { session: true },
+    where: {
+      sessionId,
+    },
+    include: {
+      session: true,
+    },
   });
 
   if (!submission) {
-    throw new Error(`Symptom submission not found for session ${sessionId}`);
+    throw new Error(
+      `Symptom submission not found for session ${sessionId}`
+    );
   }
 
   const { system, user } = buildFollowupPrompt({
@@ -31,41 +55,66 @@ const processFollowupJob = async (job :any) => {
   const { parsed } = await callGPTJson({
     system,
     user,
-    schemaName: 'followup',
+    schemaName: "followup",
   });
 
-  if (!Array.isArray(parsed?.questions)) {
-    throw new Error('GPT did not return a questions array');
+  const response = parsed as FollowupResponse;
+
+  if (!Array.isArray(response.questions)) {
+    throw new Error("GPT did not return a questions array");
   }
 
   await prisma.$transaction([
     prisma.followUpResponse.upsert({
-      where: { sessionId },
+      where: {
+        sessionId,
+      },
       create: {
         sessionId,
-        questions: parsed,
+        questions: response,
       },
       update: {
-        questions: parsed,
+        questions: response,
       },
     }),
+
     prisma.triageSession.update({
-      where: { id: sessionId },
-      data: { status: 'AWAITING_ANSWERS' },
+      where: {
+        id: sessionId,
+      },
+      data: {
+        status: "AWAITING_ANSWERS",
+      },
     }),
   ]);
 
-  logger.info({ sessionId, count: parsed.questions.length }, 'Followup questions saved');
-  return { sessionId, questionCount: parsed.questions.length };
+  logger.info(
+    {
+      sessionId,
+      count: response.questions.length,
+    },
+    "Followup questions saved"
+  );
+
+  return {
+    sessionId,
+    questionCount: response.questions.length,
+  };
 };
 
-followupQueue.process('generate-followup', 2, processFollowupJob);
+followupQueue.process(
+  "generate-followup",
+  2,
+  processFollowupJob
+);
 
-logger.info('Followup worker started');
+logger.info("Followup worker started");
 
-process.on('SIGTERM', async () => {
-  logger.info('Followup worker shutting down');
+process.on("SIGTERM", async () => {
+  logger.info("Followup worker shutting down");
+
   await followupQueue.close();
   await prisma.$disconnect();
+
   process.exit(0);
 });

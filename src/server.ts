@@ -3,7 +3,7 @@
 import app from "./app";
 import env from "./config/env";
 import prisma from "./database/prisma";
-import { logger } from "./middleware/logger.middleware";
+import { logger } from "./middleware/logger.middleare";
 import { Server } from "http";
 
 const start = async (): Promise<void> => {

@@ -1,17 +1,33 @@
-// src/services/triage.service.js
-'use strict';
+// src/services/triage.service.ts
 
-const prisma = require('../database/prisma');
-const ApiError = require('../utils/apiError');
-const sessionService = require('./session.service');
-const { addFollowupJob } = require('../queues/followup.queue');
-const { addAssessmentJob } = require('../queues/assessment.queue');
+import prisma from "../database/prisma";
+import ApiError from "../utils/apierror";
+import * as sessionService from "./session.services";
+import { addFollowupJob } from "../queues/followup.queue";
+import { addAssessmentJob } from "../queues/assessment.queue";
+
+interface StartTriageParams {
+  symptoms: string[];
+  age?: number | null;
+  gender?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+interface FollowUpAnswer {
+  question: string;
+  answer: string;
+}
 
 /**
- * Create a new triage session, persist the initial symptoms, and enqueue
- * the followup-generation job.
+ * Create a new triage session, persist the initial symptoms,
+ * and enqueue the follow-up generation job.
  */
-const startTriage = async ({ symptoms, age, gender, metadata }) => {
+export const startTriage = async ({
+  symptoms,
+  age,
+  gender,
+  metadata,
+}: StartTriageParams) => {
   const session = await sessionService.createSession();
 
   await prisma.symptomSubmission.create({
@@ -20,29 +36,39 @@ const startTriage = async ({ symptoms, age, gender, metadata }) => {
       symptoms,
       age: age ?? null,
       gender: gender ?? null,
-      metadata: metadata ?? undefined,
+      metadata,
     },
   });
 
-  await sessionService.updateSessionStatus(session.id, 'AWAITING_FOLLOWUP');
+  await sessionService.updateSessionStatus(
+    session.id,
+    "AWAITING_FOLLOWUP"
+  );
 
   await addFollowupJob(session.id);
 
   return {
     sessionId: session.id,
-    status: 'AWAITING_FOLLOWUP',
-    message: 'Triage session created. Follow-up questions will be generated shortly.',
+    status: "AWAITING_FOLLOWUP",
+    message:
+      "Triage session created. Follow-up questions will be generated shortly.",
   };
 };
 
 /**
- * Store the patient's answers to the follow-up questions and enqueue the
- * risk-assessment job.
+ * Store the patient's answers and enqueue
+ * the assessment job.
  */
-const submitFollowupAnswers = async (sessionId, answers) => {
+export const submitFollowupAnswers = async (
+  sessionId: string,
+  answers: FollowUpAnswer[]
+) => {
   const session = await sessionService.findSessionById(sessionId);
 
-  if (session.status !== 'AWAITING_ANSWERS' && session.status !== 'AWAITING_FOLLOWUP') {
+  if (
+    session.status !== "AWAITING_ANSWERS" &&
+    session.status !== "AWAITING_FOLLOWUP"
+  ) {
     throw new ApiError(
       409,
       `Session is not accepting answers (current status: ${session.status})`
@@ -50,7 +76,10 @@ const submitFollowupAnswers = async (sessionId, answers) => {
   }
 
   if (!session.followUp) {
-    throw new ApiError(409, 'Follow-up questions have not been generated yet');
+    throw new ApiError(
+      409,
+      "Follow-up questions have not been generated yet"
+    );
   }
 
   await prisma.followUpResponse.update({
@@ -58,20 +87,27 @@ const submitFollowupAnswers = async (sessionId, answers) => {
     data: { answers },
   });
 
-  await sessionService.updateSessionStatus(sessionId, 'AWAITING_ASSESSMENT');
+  await sessionService.updateSessionStatus(
+    sessionId,
+    "AWAITING_ASSESSMENT"
+  );
+
   await addAssessmentJob(sessionId);
 
   return {
     sessionId,
-    status: 'AWAITING_ASSESSMENT',
-    message: 'Answers received. Risk assessment is being generated.',
+    status: "AWAITING_ASSESSMENT",
+    message:
+      "Answers received. Risk assessment is being generated.",
   };
 };
 
-const getAssessmentResult = async (sessionId) => {
+export const getAssessmentResult = async (
+  sessionId: string
+) => {
   const session = await sessionService.findSessionById(sessionId);
 
-  if (session.status !== 'COMPLETED' || !session.assessment) {
+  if (session.status !== "COMPLETED" || !session.assessment) {
     return {
       sessionId,
       status: session.status,
@@ -92,10 +128,4 @@ const getAssessmentResult = async (sessionId) => {
       createdAt: session.assessment.createdAt,
     },
   };
-};
-
-module.exports = {
-  startTriage,
-  submitFollowupAnswers,
-  getAssessmentResult,
 };

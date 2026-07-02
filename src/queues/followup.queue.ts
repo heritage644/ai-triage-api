@@ -1,37 +1,64 @@
-// src/queues/followup.queue.js
-'use strict';
+// src/queues/followup.queue.ts
 
-const Queue = require('bull');
-const { createRedisConnection } = require('./redis');
-const { logger } = require('../middleware/logger.middleware');
+import Queue, { Job } from "bull";
+import { createRedisConnection } from "./redis";
+import { logger } from "../middleware/logger.middleare";
 
-const followupQueue = new Queue('followup-queue', {
-  createClient: () => createRedisConnection(),
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: { type: 'exponential', delay: 2000 },
-    removeOnComplete: 100,
-    removeOnFail: 500,
-  },
-});
+interface FollowupJobData {
+  sessionId: string;
+}
 
-followupQueue.on('failed', (job :any, err :any) => {
-  logger.error(
-    { jobId: job.id, sessionId: job.data?.sessionId, err: err.message },
-    'Followup job failed'
-  );
-});
+export const followupQueue = new Queue<FollowupJobData>(
+  "followup-queue",
+  {
+    createClient: () => createRedisConnection(),
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 2000,
+      },
+      removeOnComplete: 100,
+      removeOnFail: 500,
+    },
+  }
+);
 
-followupQueue.on('completed', (job :any) => {
-  logger.info({ jobId: job.id, sessionId: job.data?.sessionId }, 'Followup job completed');
-});
+followupQueue.on(
+  "failed",
+  (job: Job<FollowupJobData> | undefined, err: Error) => {
+    logger.error(
+      {
+        jobId: job?.id,
+        sessionId: job?.data.sessionId,
+        err: err.message,
+      },
+      "Follow-up job failed"
+    );
+  }
+);
 
-const addFollowupJob = async (sessionId :string) => {
+followupQueue.on(
+  "completed",
+  (job: Job<FollowupJobData>) => {
+    logger.info(
+      {
+        jobId: job.id,
+        sessionId: job.data.sessionId,
+      },
+      "Follow-up job completed"
+    );
+  }
+);
+
+export const addFollowupJob = async (
+  sessionId: string
+): Promise<Job<FollowupJobData>> => {
   return followupQueue.add(
-    'generate-followup',
+    "generate-followup",
     { sessionId },
-    { jobId: `followup:${sessionId}` }
+    {
+      jobId: `followup:${sessionId}`,
+    }
   );
 };
-
-module.exports = { followupQueue, addFollowupJob };

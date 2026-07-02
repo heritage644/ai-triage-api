@@ -1,26 +1,36 @@
-// src/queues/redis.js
-'use strict';
+// src/queues/redis.ts
 
-const IORedis = require('ioredis');
-const env = require('../config/env');
-const { logger } = require('../middleware/logger.middleware');
+import IORedis, { Redis } from "ioredis";
+import env from "../config/env";
+import { logger } from "../middleware/logger.middleare";
 
-const createRedisConnection = () => {
+export const createRedisConnection = (): Redis => {
   const redis = new IORedis({
     host: env.REDIS_HOST,
     port: env.REDIS_PORT,
     password: env.REDIS_PASSWORD || undefined,
-    maxRetriesPerRequest: null, // required by Bull
+
+    // Required by Bull
+    maxRetriesPerRequest: null,
     enableReadyCheck: false,
-    retryStrategy: (times:any) => {
-      const delay = Math.min(times * 200, 5000);
-      return delay;
+
+    retryStrategy: (times: number): number => {
+      return Math.min(times * 200, 5000);
     },
   });
 
-  redis.on('error', (err:any) => logger.error({ err }, 'Redis connection error'));
-  redis.on('connect', () => logger.info('Redis connected'));
+  redis.on("connect", () => {
+    logger.info("Redis connected");
+  });
+
+  redis.on("error", (err: Error) => {
+    logger.error(
+      {
+        err,
+      },
+      "Redis connection error"
+    );
+  });
+
   return redis;
 };
-
-module.exports = { createRedisConnection };

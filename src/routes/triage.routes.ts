@@ -1,27 +1,49 @@
-// src/routes/triage.routes.js
-'use strict';
+// src/routes/triage.routes.ts
 
-const { Router } = require('express');
-const controller = require('../controllers/triage.controller');
-const {
+import { Router } from "express";
+
+import {
+  startTriage,
+  getSession,
+  submitFollowup,
+  getResult,
+} from "../controllers/symptomsInputController";
+
+import {
   validate,
   startTriageSchema,
   sessionIdParamSchema,
   submitFollowupSchema,
-} = require('../validators/triage.validator');
+} from "../validators/triage.validatios";
 
 const router = Router();
 
 // POST /api/triage/start
-router.post('/start', validate(startTriageSchema), controller.startTriage);
+router.post(
+  "/start",
+  validate(startTriageSchema),
+  startTriage
+);
 
 // GET /api/triage/:sessionId
-router.get('/:sessionId', validate(sessionIdParamSchema), controller.getSession);
+router.get(
+  "/:sessionId",
+  validate(sessionIdParamSchema),
+  getSession
+);
 
 // POST /api/triage/:sessionId/followup
-router.post('/:sessionId/followup', validate(submitFollowupSchema), controller.submitFollowup);
+router.post(
+  "/:sessionId/followup",
+  validate(submitFollowupSchema),
+  submitFollowup
+);
 
 // GET /api/triage/:sessionId/result
-router.get('/:sessionId/result', validate(sessionIdParamSchema), controller.getResult);
+router.get(
+  "/:sessionId/result",
+  validate(sessionIdParamSchema),
+  getResult
+);
 
 export default router;

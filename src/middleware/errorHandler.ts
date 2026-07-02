@@ -1,24 +1,46 @@
-// src/middleware/error.middleware.js
-'use strict';
-import type{ Request, Response, NextFunction } from 'express';
-const { z } = require('zod');
-const ApiError = require('../utils/apiError');
-const { logger } = require('./logger.middleware');
+// src/middleware/error.middleware.ts
 
-// eslint-disable-next-line no-unused-vars
-const errorMiddleware = (err :any, req :Request, res :Response, next :NextFunction) => {
-  // Zod validation errors -> 400
-  if (err instanceof z.ZodError) {
+import { Request, Response, NextFunction } from "express";
+import { ZodError } from "zod";
+import ApiError from "../utils/apierror";
+import { logger } from "./logger.middleare";
+
+interface ErrorResponse {
+  success: false;
+  message: string;
+  errors?: unknown;
+  details?: unknown;
+}
+
+const errorMiddleware = (
+  err: unknown,
+  req: Request,
+  res: Response<ErrorResponse>,
+  next: NextFunction
+): Response | void => {
+  // Prevent TypeScript warning about unused parameter
+  void req;
+  void next;
+
+  // Zod validation errors
+  if (err instanceof ZodError) {
     return res.status(400).json({
       success: false,
-      message: 'Validation failed',
+      message: "Validation failed",
       errors: err.flatten().fieldErrors,
     });
   }
 
-  // Operational errors we created ourselves
+  // Custom operational errors
   if (err instanceof ApiError) {
-    logger.warn({ err: err.message, statusCode: err.statusCode }, 'Operational error');
+    logger.warn(
+      {
+        err: err.message,
+        statusCode: err.statusCode,
+      },
+      "Operational error"
+    );
+
     return res.status(err.statusCode).json({
       success: false,
       message: err.message,
@@ -26,14 +48,19 @@ const errorMiddleware = (err :any, req :Request, res :Response, next :NextFuncti
     });
   }
 
-  // Unexpected / programmer errors
-  logger.error({ err }, 'Unhandled error');
+  // Unknown errors
+  logger.error({ err }, "Unhandled error");
+
+  const message =
+    process.env.NODE_ENV === "production"
+      ? "Internal server error"
+      : err instanceof Error
+      ? err.message
+      : "Internal server error";
+
   return res.status(500).json({
     success: false,
-    message:
-      process.env.NODE_ENV === 'production'
-        ? 'Internal server error'
-        : err.message || 'Internal server error',
+    message,
   });
 };
 

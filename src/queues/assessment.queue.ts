@@ -1,37 +1,64 @@
-// src/queues/assessment.queue.js
-'use strict';
+// src/queues/assessment.queue.ts
 
-const Queue = require('bull');
-const { createRedisConnection } = require('./redis');
-const { logger } = require('../middleware/logger.middleware');
+import Queue, { Job } from "bull";
+import {createRedisConnection} from "./redis";
+import { logger } from "../middleware/logger.middleare";
 
-const assessmentQueue = new Queue('assessment-queue', {
-  createClient: () => createRedisConnection(),
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: { type: 'exponential', delay: 2000 },
-    removeOnComplete: 100,
-    removeOnFail: 500,
-  },
-});
+interface AssessmentJobData {
+  sessionId: string;
+}
 
-assessmentQueue.on('failed', (job :any, err :any) => {
-  logger.error(
-    { jobId: job.id, sessionId: job.data?.sessionId, err: err.message },
-    'Assessment job failed'
-  );
-});
+export const assessmentQueue = new Queue<AssessmentJobData>(
+  "assessment-queue",
+  {
+    createClient: () => createRedisConnection(),
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 2000,
+      },
+      removeOnComplete: 100,
+      removeOnFail: 500,
+    },
+  }
+);
 
-assessmentQueue.on('completed', (job :any) => {
-  logger.info({ jobId: job.id, sessionId: job.data?.sessionId }, 'Assessment job completed');
-});
+assessmentQueue.on(
+  "failed",
+  (job: Job<AssessmentJobData> | undefined, err: Error) => {
+    logger.error(
+      {
+        jobId: job?.id,
+        sessionId: job?.data.sessionId,
+        err: err.message,
+      },
+      "Assessment job failed"
+    );
+  }
+);
 
-const addAssessmentJob = async (sessionId :string) => {
+assessmentQueue.on(
+  "completed",
+  (job: Job<AssessmentJobData>) => {
+    logger.info(
+      {
+        jobId: job.id,
+        sessionId: job.data.sessionId,
+      },
+      "Assessment job completed"
+    );
+  }
+);
+
+export const addAssessmentJob = async (
+  sessionId: string
+): Promise<Job<AssessmentJobData>> => {
   return assessmentQueue.add(
-    'generate-assessment',
+    "generate-assessment",
     { sessionId },
-    { jobId: `assessment:${sessionId}` }
+    {
+      jobId: `assessment:${sessionId}`,
+    }
   );
 };
-
-module.exports = { assessmentQueue, addAssessmentJob };
