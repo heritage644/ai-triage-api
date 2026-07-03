@@ -1,7 +1,7 @@
-// src/ai/prompts/followup.prompt.ts
+// src/ai/prompts/follow.prompts.ts
 
 export interface FollowupPromptParams {
-  symptoms: string;
+  symptoms: string[];
   age: number | null;
   gender: string | null;
 }
@@ -47,7 +47,7 @@ Rules:
 - Do not include disclaimers or markdown.`;
 
   const user = `Patient symptoms:
-${symptoms}
+${symptoms.join(", ")}
 ${age !== null ? `Age: ${age}` : ""}
 ${gender !== null ? `Gender: ${gender}` : ""}
 

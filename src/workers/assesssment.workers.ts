@@ -3,12 +3,14 @@
 import "dotenv/config";
 
 import prisma from "../database/prisma";
+import { Prisma, SessionStatus, RiskLevel } from "@prisma/client";
+
 import { assessmentQueue } from "../queues/assessment.queue";
 import { callGPTJson } from "../ai/openai.service";
 import { buildAssessmentPrompt } from "../ai/prompts/assesment.prompts";
 import { logger } from "../middleware/logger.middleare";
 
-type RiskLevel = "LOW" | "MODERATE" | "HIGH" | "EMERGENCY";
+
 
 interface ParsedAssessment {
   riskLevel: RiskLevel;
@@ -88,7 +90,7 @@ const processAssessmentJob = async (job: any) => {
   )
     ? (session.followUp.answers as any).answers
     : Array.isArray(session.followUp.answers)
-    ? (session.followUp.answers as FollowupAnswer[])
+    ? (session.followUp.answers as unknown as FollowupAnswer[])
     : [];
 
   const questions: FollowupQuestion[] = Array.isArray(
@@ -127,11 +129,11 @@ const processAssessmentJob = async (job: any) => {
       create: {
         sessionId,
         ...assessment,
-        rawPayload: parsed,
+        rawPayload: parsed as Prisma.InputJsonValue,
       },
       update: {
         ...assessment,
-        rawPayload: parsed,
+        rawPayload: parsed as Prisma.InputJsonValue,
       },
     }),
 
@@ -140,7 +142,7 @@ const processAssessmentJob = async (job: any) => {
         id: sessionId,
       },
       data: {
-        status: "COMPLETED",
+        status: SessionStatus.COMPLETED,
       },
     }),
   ]);

@@ -1,7 +1,7 @@
 // src/ai/prompts/assessment.prompt.ts
 
 export interface AssessmentPromptParams {
-  symptoms: string;
+  symptoms: string[];
   answers: {
     question: string;
     answer: string;
@@ -50,7 +50,7 @@ Rules:
     .join("\n");
 
   const user = `Initial symptoms:
-${symptoms}
+${symptoms.join(", ")}
 ${age !== null ? `Age: ${age}` : ""}
 ${gender !== null ? `Gender: ${gender}` : ""}
 

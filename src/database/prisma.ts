@@ -27,23 +27,24 @@ declare global {
 const prisma: PrismaClient =
   globalThis.prisma ?? prismaClientSingleton();
 
-prisma.$on("warn", (event) => {
+{/*prisma.$on("warn", (event) => {
+
   logger.warn(
     {
       prisma: event,
     },
     "Prisma warning"
   );
-});
+})*/};
 
-prisma.$on("error", (event) => {
-  logger.error(
-    {
-      prisma: event,
-    },
-    "Prisma error"
-  );
-});
+//prisma.$on("error", (event) => {
+  //logger.error(
+    //{
+      //prisma: event,
+    //},
+    //"Prisma error"
+  //);
+//});
 
 if (process.env.NODE_ENV !== "production") {
   globalThis.prisma = prisma;

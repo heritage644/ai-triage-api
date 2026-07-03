@@ -1,7 +1,6 @@
-// src/services/session.service.ts
-
 import prisma from "../database/prisma";
 import ApiError from "../utils/apierror";
+import { SessionStatus } from "@prisma/client";
 
 /**
  * Creates a new triage session.
@@ -9,7 +8,7 @@ import ApiError from "../utils/apierror";
 export const createSession = async () => {
   return prisma.triageSession.create({
     data: {
-      status: "CREATED",
+      status: SessionStatus.CREATED,
     },
   });
 };
@@ -42,7 +41,7 @@ export const findSessionById = async (sessionId: string) => {
  */
 export const updateSessionStatus = async (
   sessionId: string,
-  status: string
+  status: SessionStatus
 ) => {
   return prisma.triageSession.update({
     where: {

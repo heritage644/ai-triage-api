@@ -1,5 +1,4 @@
-// src/services/triage.service.ts
-
+import { Prisma, SessionStatus } from "@prisma/client";
 import prisma from "../database/prisma";
 import ApiError from "../utils/apierror";
 import * as sessionService from "./session.services";
@@ -36,20 +35,20 @@ export const startTriage = async ({
       symptoms,
       age: age ?? null,
       gender: gender ?? null,
-      metadata,
+      metadata: metadata as Prisma.InputJsonValue,
     },
   });
 
   await sessionService.updateSessionStatus(
     session.id,
-    "AWAITING_FOLLOWUP"
+    SessionStatus.AWAITING_FOLLOWUP
   );
 
   await addFollowupJob(session.id);
 
   return {
     sessionId: session.id,
-    status: "AWAITING_FOLLOWUP",
+    status: SessionStatus.AWAITING_FOLLOWUP,
     message:
       "Triage session created. Follow-up questions will be generated shortly.",
   };
@@ -66,8 +65,8 @@ export const submitFollowupAnswers = async (
   const session = await sessionService.findSessionById(sessionId);
 
   if (
-    session.status !== "AWAITING_ANSWERS" &&
-    session.status !== "AWAITING_FOLLOWUP"
+    session.status !== SessionStatus.AWAITING_ANSWERS &&
+    session.status !== SessionStatus.AWAITING_FOLLOWUP
   ) {
     throw new ApiError(
       409,
@@ -84,19 +83,21 @@ export const submitFollowupAnswers = async (
 
   await prisma.followUpResponse.update({
     where: { sessionId },
-    data: { answers },
+    data: {
+      answers: answers as unknown as Prisma.InputJsonValue,
+    },
   });
 
   await sessionService.updateSessionStatus(
     sessionId,
-    "AWAITING_ASSESSMENT"
+    SessionStatus.AWAITING_ASSESSMENT
   );
 
   await addAssessmentJob(sessionId);
 
   return {
     sessionId,
-    status: "AWAITING_ASSESSMENT",
+    status: SessionStatus.AWAITING_ASSESSMENT,
     message:
       "Answers received. Risk assessment is being generated.",
   };
@@ -107,7 +108,10 @@ export const getAssessmentResult = async (
 ) => {
   const session = await sessionService.findSessionById(sessionId);
 
-  if (session.status !== "COMPLETED" || !session.assessment) {
+  if (
+    session.status !== SessionStatus.COMPLETED ||
+    !session.assessment
+  ) {
     return {
       sessionId,
       status: session.status,

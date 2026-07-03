@@ -2,6 +2,7 @@
 
 import "dotenv/config";
 
+import { Prisma, SessionStatus } from "@prisma/client";
 import prisma from "../database/prisma";
 import { followupQueue } from "../queues/followup.queue";
 import { callGPTJson } from "../ai/openai.service";
@@ -17,7 +18,9 @@ interface FollowupResponse {
   questions: FollowupQuestion[];
 }
 
-const processFollowupJob = async (job: any): Promise<{
+const processFollowupJob = async (
+  job: any
+): Promise<{
   sessionId: string;
   questionCount: number;
 }> => {
@@ -71,10 +74,10 @@ const processFollowupJob = async (job: any): Promise<{
       },
       create: {
         sessionId,
-        questions: response,
+        questions: response as unknown as Prisma.InputJsonValue,
       },
       update: {
-        questions: response,
+        questions: response as unknown as Prisma.InputJsonValue,
       },
     }),
 
@@ -83,7 +86,7 @@ const processFollowupJob = async (job: any): Promise<{
         id: sessionId,
       },
       data: {
-        status: "AWAITING_ANSWERS",
+        status: SessionStatus.AWAITING_ANSWERS,
       },
     }),
   ]);
