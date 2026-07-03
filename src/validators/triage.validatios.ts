@@ -10,10 +10,11 @@ const uuidRegex =
 export const startTriageSchema = z.object({
   body: z.object({
     symptoms: z
-      .string({ required_error: "symptoms is required" })
-      .trim()
-      .min(5)
-      .max(4000),
+      .array(
+        z.string().trim().min(1, "Each symptom must not be empty")
+      )
+      .min(1, "At least one symptom is required")
+      .max(20, "Too many symptoms"),
 
     age: z.number().int().min(0).max(130).optional(),
 
