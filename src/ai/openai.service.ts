@@ -1,13 +1,12 @@
 // src/ai/openai.service.ts
 
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 import env from "../config/env";
 import { logger } from "../middleware/logger.middleare";
 import ApiError from "../utils/apierror";
 
-const client = new OpenAI({
-  apiKey: env.OPENAI_API_KEY,
-  timeout: env.OPENAI_TIMEOUT_MS,
+const client = new GoogleGenAI({
+  apiKey: env.GEMINI_API_KEY,
 });
 
 export interface GPTParams {
@@ -18,7 +17,7 @@ export interface GPTParams {
 
 interface GPTResponse {
   parsed: unknown;
-  usage: OpenAI.CompletionUsage | undefined;
+  usage?: unknown;
   rawContent: string;
 }
 
@@ -32,37 +31,41 @@ export const callGPTJson = async ({
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const completion = await client.chat.completions.create({
-        model: env.OPENAI_MODEL,
-        temperature: 0.2,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content: system,
-          },
-          {
-            role: "user",
-            content: user,
-          },
-        ],
+      const prompt = `
+${system}
+
+${user}
+
+IMPORTANT:
+- Respond ONLY with valid JSON.
+- Do not wrap the JSON in markdown.
+- Do not include explanations.
+`;
+
+      const response = await client.models.generateContent({
+        model: env.GEMINI_MODEL,
+        contents: prompt,
+        config: {
+          temperature: 0.2,
+          responseMimeType: "application/json",
+        },
       });
 
-      const content = completion.choices?.[0]?.message?.content ?? "";
+      const content = response.text ?? "";
 
       logger.debug(
         {
           schemaName,
           attempt,
-          model: completion.model,
-          usage: completion.usage,
+          model: env.GEMINI_MODEL,
+          usage: response.usageMetadata,
         },
-        "GPT response received"
+        "Gemini response received"
       );
 
       return {
         parsed: JSON.parse(content),
-        usage: completion.usage,
+        usage: response.usageMetadata,
         rawContent: content,
       };
     } catch (err) {
@@ -74,14 +77,14 @@ export const callGPTJson = async ({
           attempt,
           err: err instanceof Error ? err.message : err,
         },
-        "GPT call attempt failed"
+        "Gemini call attempt failed"
       );
 
-      if (attempt === maxAttempts) break;
-
-      await new Promise((resolve) =>
-        setTimeout(resolve, attempt * 1000)
-      );
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, attempt * 1000)
+        );
+      }
     }
   }
 
@@ -89,7 +92,7 @@ export const callGPTJson = async ({
     {
       err: lastError,
     },
-    "GPT call failed after retries"
+    "Gemini call failed after retries"
   );
 
   throw new ApiError(502, "AI provider failed to generate a response");

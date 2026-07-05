@@ -23,7 +23,7 @@ const envSchema = z.object({
   REDIS_PORT: z.coerce.number().int().positive().default(6379),
   REDIS_PASSWORD: z.string().optional(),
 
-  CORS_ORIGIN: z.string().default("*"),
+  CORS_ORIGIN: z.string().default("http://localhost:8080"),
 
   RATE_LIMIT_WINDOW_MS: z.coerce
     .number()
@@ -33,13 +33,13 @@ const envSchema = z.object({
 
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
 
-  OPENAI_API_KEY: z.string().min(10),
-  OPENAI_MODEL: z.string().default("gpt-4o-mini"),
-  OPENAI_TIMEOUT_MS: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(30000),
+GEMINI_API_KEY: z.string().min(10),
+GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
+AI_TIMEOUT_MS: z.coerce
+  .number()
+  .int()
+  .positive()
+  .default(30000),
 
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace"])

@@ -4,8 +4,8 @@
   "description": "AI-Based Symptom Triage System for Early Health Risk Assessment",
   "main": "src/server.ts",
   "scripts": {
-   "build": "tsc",
-  "start": "node dist/server.js",
+    "build": "tsc",
+    "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
     "worker:followup": "ts-node src/workers/followup.worker.ts",
     "worker:assessment": "ts-node src/workers/assessment.worker.ts",
@@ -19,6 +19,7 @@
     "docker:logs": "docker-compose logs -f"
   },
   "dependencies": {
+    "@google/genai": "^2.10.0",
     "@prisma/client": "^5.20.0",
     "bull": "^4.16.3",
     "cors": "^2.8.5",
@@ -27,7 +28,6 @@
     "express-rate-limit": "^7.4.0",
     "helmet": "^7.1.0",
     "ioredis": "^5.4.1",
-    "openai": "^4.67.3",
     "pino": "^9.4.0",
     "pino-pretty": "^11.2.2",
     "uuid": "^10.0.0",
