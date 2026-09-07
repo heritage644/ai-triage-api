@@ -21,7 +21,7 @@ const envSchema = z.object({
 
  REDIS_URL: z.string().url(),
 
-  CORS_ORIGIN: z.string().default("http://localhost:8080"),
+  CORS_ORIGIN: z.string().default("https://pulse-ai-triage-git-main-heritage644s-projects.vercel.app"),
 
   RATE_LIMIT_WINDOW_MS: z.coerce
     .number()
