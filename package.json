@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
+   
     "dev": "ts-node src/server.ts",
     "worker:followup": "ts-node src/workers/followup.worker.ts",
     "worker:assessment": "ts-node src/workers/assessment.worker.ts",
@@ -46,6 +47,6 @@
     "typescript": "^6.0.3"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "22.x"
   }
 }
