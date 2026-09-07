@@ -14,11 +14,8 @@ import triageRoutes from "./routes/triage.routes";
 const app = express();
 
 // Trust reverse proxy (e.g., Docker, Nginx)
+
 app.set("trust proxy", 1);
-
-// Security headers
-app.use(helmet());
-
 // CORS
 app.use(
   cors({
@@ -29,6 +26,10 @@ app.use(
     credentials: true,
   })
 );
+// Security headers
+app.use(helmet());
+
+
 
 // Body parsers
 app.use(express.json({ limit: "1mb" }));
