@@ -19,9 +19,7 @@ const envSchema = z.object({
 
   DATABASE_URL: z.string().url(),
 
-  REDIS_HOST: z.string().default("localhost"),
-  REDIS_PORT: z.coerce.number().int().positive().default(6379),
-  REDIS_PASSWORD: z.string().optional(),
+ REDIS_URL: z.string().url(),
 
   CORS_ORIGIN: z.string().default("http://localhost:8080"),
 
