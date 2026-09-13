@@ -13,23 +13,19 @@ import triageRoutes from "./routes/triage.routes";
 
 const app = express();
 
-// Trust reverse proxy (e.g., Docker, Nginx)
-
+// Trust reverse proxy (e.g., Docker, Nginx, Render)
 app.set("trust proxy", 1);
-// CORS
+
+// CORS configuration
 app.use(
   cors({
-    origin:
-      env.CORS_ORIGIN 
-        ? true
-        : env.CORS_ORIGIN.split(","),
+    origin: env.CORS_ORIGIN === "*" ? true : env.CORS_ORIGIN?.split(",") || true,
     credentials: true,
   })
 );
+
 // Security headers
 app.use(helmet());
-
-
 
 // Body parsers
 app.use(express.json({ limit: "1mb" }));
@@ -62,7 +58,12 @@ interface HealthResponse {
   data: HealthData;
 }
 
-// Health check endpoint
+// Root endpoint for Render health checks
+app.get("/", (req: Request, res: Response): void => {
+  res.status(200).send("OK");
+});
+
+// Detailed health check endpoint
 app.get(
   "/health",
   (
