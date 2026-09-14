@@ -5,6 +5,8 @@ import env from "./config/env";
 import prisma from "./database/prisma";
 import { logger } from "./middleware/logger.middleare";
 import { Server } from "http";
+import "./workers/follow.worker";
+import "./workers/assesssment.workers";
 
 const start = async (): Promise<void> => {
   try {

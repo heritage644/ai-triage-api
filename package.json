@@ -6,6 +6,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
+    "start:workers": "node dist/workers/followup.worker.js",
+     "start:worker:assessment": "node dist/workers/assessment.worker.js",
+     "start:workers:all": "concurrently \"node dist/workers/followup.worker.js\" \"node dist/workers/assessment.worker.js\"",
    
     "dev": "ts-node src/server.ts",
     "worker:followup": "ts-node src/workers/followup.worker.ts",
